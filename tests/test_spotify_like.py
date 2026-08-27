@@ -112,6 +112,22 @@ class SpotifyLikeTests(unittest.TestCase):
         )
         remember.assert_not_called()
 
+    @mock.patch("spotify_like.playlist_contains")
+    @mock.patch(
+        "spotify_like.playlist_info",
+        side_effect=spotify_like.SpotifyError("Spotify API error 403.", status_code=403),
+    )
+    def test_reports_uneditable_playlist_when_its_name_is_private(
+        self, _info, contains
+    ):
+        self.assertEqual(
+            spotify_like.add_to_source_playlist(
+                "spotify:track:current", "token", "list1"
+            ),
+            ("uneditable", None),
+        )
+        contains.assert_not_called()
+
     @mock.patch("spotify_like.notify")
     @mock.patch("builtins.print")
     @mock.patch(

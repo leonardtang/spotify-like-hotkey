@@ -364,11 +364,12 @@ def playlist_contains(playlist_id, track_uri, token):
 def add_to_source_playlist(track_uri, token, playlist_id):
     if not playlist_id:
         return None
-    name = playlist_info(playlist_id, token)
-    if playlist_contains(playlist_id, track_uri, token):
-        return "already", name
-    encoded_id = urllib.parse.quote(playlist_id, safe="")
+    name = None
     try:
+        name = playlist_info(playlist_id, token)
+        if playlist_contains(playlist_id, track_uri, token):
+            return "already", name
+        encoded_id = urllib.parse.quote(playlist_id, safe="")
         status, _ = api_request(
             f"https://api.spotify.com/v1/playlists/{encoded_id}/items",
             token,
@@ -460,7 +461,11 @@ def like_current():
     elif playlist_result and playlist_result[0] == "already":
         message = f"Liked “{name}”; it’s already in “{playlist_result[1]}”"
     elif playlist_result and playlist_result[0] == "uneditable":
-        message = f"Liked “{name}”; you can’t edit “{playlist_result[1]}”"
+        playlist_name = playlist_result[1]
+        if playlist_name:
+            message = f"Liked “{name}”; you can’t edit “{playlist_name}”"
+        else:
+            message = f"Liked “{name}”; you can’t edit the source playlist"
     else:
         message = f"Liked “{name}” — {artist}"
     notify(message)
