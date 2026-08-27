@@ -1,8 +1,14 @@
 # Spotify Like Hotkey
 
-A tiny, local macOS utility that toggles the currently playing Spotify track with **Control–Option–Command–L**.
+A tiny, local macOS utility that toggles the currently playing Spotify track with one shortcut.
 
 If the track came from an editable playlist, liking it also adds it to that playlist. Unliking removes only playlist entries that this utility previously added.
+
+## Keyboard shortcut
+
+> **⌃ ⌥ ⌘ L** — **Control + Option + Command + L**
+
+Press once to like the current track. Press the same shortcut again to unlike it.
 
 ## Requirements
 
@@ -34,7 +40,6 @@ The installer builds the notification helper locally, installs a macOS Quick Act
 
 ## Behavior
 
-- Press once to like the current track; press again to unlike it.
 - Tracks played from an editable playlist are added to that playlist when liked.
 - Unliking removes a track from playlists only when this utility added it there.
 - Notifications appear immediately and remove themselves after six seconds.
