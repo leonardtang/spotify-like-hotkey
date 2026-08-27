@@ -9,7 +9,7 @@
 	<key>CFBundleName</key>
 	<string>Toggle Current Spotify Song</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.1</string>
+	<string>1.0.0</string>
 	<key>NSServices</key>
 	<array>
 		<dict>

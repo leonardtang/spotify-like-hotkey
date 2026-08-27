@@ -16,5 +16,10 @@ jobs:
         run: python3 -m unittest discover -s tests -v
       - name: Check shell scripts
         run: zsh -n install.sh uninstall.sh build_notifier.sh
+      - name: Check property lists
+        run: >-
+          plutil -lint notifier/Info.plist
+          "Toggle Current Spotify Song.workflow/Contents/Info.plist"
+          "Toggle Current Spotify Song.workflow/Contents/Resources/document.wflow"
       - name: Build notifier
         run: ./build_notifier.sh "$RUNNER_TEMP/Spotify Like.app"

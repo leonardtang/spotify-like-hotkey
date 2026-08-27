@@ -8,7 +8,7 @@ if [[ $# -ne 1 ]]; then
   exit 2
 fi
 
-for tool in swiftc sips iconutil codesign; do
+for tool in swiftc lipo sips iconutil codesign; do
   command -v "$tool" >/dev/null || {
     print -u2 "Missing required macOS tool: $tool"
     exit 1
@@ -31,10 +31,17 @@ iconset="$icon_work/SpotifyLike.iconset"
 mkdir -p "$resources" "$macos" "$iconset"
 cp "$script_dir/notifier/Info.plist" "$contents/Info.plist"
 
-swiftc "$script_dir/notifier/notifier.swift" \
-  -o "$macos/SpotifyLikeNotifier" \
-  -framework Cocoa \
-  -framework UserNotifications
+for architecture in arm64 x86_64; do
+  swiftc "$script_dir/notifier/notifier.swift" \
+    -target "$architecture-apple-macosx13.0" \
+    -o "$icon_work/SpotifyLikeNotifier-$architecture" \
+    -framework Cocoa \
+    -framework UserNotifications
+done
+lipo -create \
+  "$icon_work/SpotifyLikeNotifier-arm64" \
+  "$icon_work/SpotifyLikeNotifier-x86_64" \
+  -output "$macos/SpotifyLikeNotifier"
 
 for specification in \
   '16 icon_16x16.png' \

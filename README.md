@@ -1,60 +1,75 @@
 # Spotify Like Hotkey
 
-A small macOS utility that toggles the currently playing Spotify track with **Control–Option–Command–L**.
+A tiny, local macOS utility that toggles the currently playing Spotify track with **Control–Option–Command–L**.
 
-When liking a track, the utility also adds it to the active playlist when that playlist is editable and does not already contain the track. When unliking, it removes only playlist entries previously added by this utility.
+If the track came from an editable playlist, liking it also adds it to that playlist. Unliking removes only playlist entries that this utility previously added.
 
 ## Requirements
 
-- macOS
-- Spotify Premium account
-- Python 3.9 or newer
+- macOS 13 or newer
+- Spotify Premium
+- Python 3.9 or newer (provided by Xcode Command Line Tools)
 - Xcode Command Line Tools (`xcode-select --install`)
 
 ## Install
 
-1. Create an app in the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) and enable the Web API.
-2. Add this exact redirect URI:
+1. Create an app in the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
+2. In the app settings, add this exact redirect URI:
 
    ```text
    http://127.0.0.1:8989/callback
    ```
 
-3. Clone this repository and run:
+3. Clone and install:
 
    ```sh
+   git clone https://github.com/leonardtang/spotify-like-hotkey.git
+   cd spotify-like-hotkey
    ./install.sh YOUR_SPOTIFY_CLIENT_ID
    ```
 
-4. Approve Spotify authorization in the browser and allow notifications when macOS asks.
+4. Approve Spotify access in the browser and allow notifications when macOS asks.
 
-The installer builds the native notification helper locally, installs a macOS Quick Action, and assigns **Control–Option–Command–L**. Change the shortcut in **System Settings → Keyboard → Keyboard Shortcuts → Services → General**.
+The installer builds the notification helper locally, installs a macOS Quick Action, and assigns **Control–Option–Command–L**. To choose another shortcut, open **System Settings → Keyboard → Keyboard Shortcuts → Services → General**.
 
-## How it works
+## Behavior
 
-- Spotify's Web API supplies the current playback state and updates Liked Songs.
-- If playback came from an editable playlist, the API adds or removes the track there as appropriate.
-- OAuth uses Authorization Code with PKCE. The localhost listener runs only during authorization.
+- Press once to like the current track; press again to unlike it.
+- Tracks played from an editable playlist are added to that playlist when liked.
+- Unliking removes a track from playlists only when this utility added it there.
+- Notifications appear immediately and remove themselves after six seconds.
+- Podcasts, audiobooks, and other non-track items are left unchanged.
+
+## Privacy and permissions
+
+- Spotify OAuth uses Authorization Code with PKCE.
+- The callback server listens only on `127.0.0.1` and only during sign-in.
 - OAuth tokens are stored in macOS Keychain.
-- Playlist additions made by the utility are tracked locally so they can be reversed safely.
+- Playlist bookkeeping stays in a local file on your Mac.
+- The shortcut does not control Spotify or the frontmost app through macOS Automation.
+- There is no hosted service, analytics, or third-party data collection.
 
-The shortcut does not control Spotify or the frontmost app through macOS Automation. There is no hosted service, analytics, or third-party data collection. Each user supplies their own Spotify Client ID.
+Each user supplies their own Spotify Client ID. A client secret is neither requested nor stored.
 
-## Development
+## Troubleshooting
 
-Run the tests:
+- **No banner appears:** turn off Focus/Do Not Disturb and allow **Spotify Like** in **System Settings → Notifications**.
+- **The shortcut does nothing:** quit and reopen the current app, then confirm the shortcut under **Keyboard Shortcuts → Services → General**.
+- **Nothing is playing:** start a regular music track in Spotify and try again.
+- **Authorization fails:** verify that the redirect URI in Spotify exactly matches `http://127.0.0.1:8989/callback`, then run:
+
+  ```sh
+  ~/.local/share/spotify-like-hotkey/spotify_like.py auth
+  ```
+
+## Update
+
+Pull the latest version and rerun the installer with the same Spotify Client ID:
 
 ```sh
-python3 -m unittest discover -s tests -v
+git pull --ff-only
+./install.sh YOUR_SPOTIFY_CLIENT_ID
 ```
-
-Build the notification app without installing it:
-
-```sh
-./build_notifier.sh "/tmp/Spotify Like.app"
-```
-
-The project uses only Python's standard library and macOS system frameworks.
 
 ## Uninstall
 
@@ -62,6 +77,22 @@ The project uses only Python's standard library and macOS system frameworks.
 ./uninstall.sh
 ```
 
+## Development
+
+Run the test suite:
+
+```sh
+python3 -m unittest discover -s tests -v
+```
+
+Build the notification helper without installing it:
+
+```sh
+./build_notifier.sh "/tmp/Spotify Like.app"
+```
+
+The project uses Python's standard library and native macOS frameworks; it has no package dependencies.
+
 ## License
 
-[MIT](LICENSE). This is an unofficial project and is not affiliated with or endorsed by Spotify.
+[MIT](LICENSE). Spotify Like Hotkey is unofficial and is not affiliated with or endorsed by Spotify.

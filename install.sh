@@ -5,6 +5,7 @@ script_dir=${0:A:h}
 install_dir="$HOME/.local/share/spotify-like-hotkey"
 service_dir="$HOME/Library/Services"
 service_name="Toggle Current Spotify Song.workflow"
+legacy_service_name="Add Current Spotify Song to Liked Songs.workflow"
 
 if [[ $# -ne 1 ]]; then
   print -u2 "Usage: $0 SPOTIFY_CLIENT_ID"
@@ -19,8 +20,24 @@ notifier_app="$build_dir/Spotify Like.app"
 
 mkdir -p "$install_dir" "$service_dir"
 install -m 755 "$script_dir/spotify_like.py" "$install_dir/spotify_like.py"
-/usr/bin/ditto "$notifier_app" "$install_dir/Spotify Like.app"
+
+# Replace the bundle instead of merging into it so upgrades cannot retain stale files.
+installed_notifier="$install_dir/Spotify Like.app"
+notifier_backup="$build_dir/Spotify Like.previous.app"
+if [[ -e "$installed_notifier" ]]; then
+  mv "$installed_notifier" "$notifier_backup"
+fi
+if ! /usr/bin/ditto "$notifier_app" "$installed_notifier"; then
+  rm -rf "$installed_notifier"
+  if [[ -e "$notifier_backup" ]]; then
+    mv "$notifier_backup" "$installed_notifier"
+  fi
+  print -u2 "Could not install the notification helper."
+  exit 1
+fi
+
 rm -rf "$service_dir/$service_name"
+rm -rf "$service_dir/$legacy_service_name"
 cp -R "$script_dir/$service_name" "$service_dir/$service_name"
 /usr/bin/python3 "$install_dir/spotify_like.py" configure "$1"
 
