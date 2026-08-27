@@ -94,6 +94,46 @@ class SpotifyLikeTests(unittest.TestCase):
             "spotify:track:current", "list1", "My Playlist"
         )
 
+    @mock.patch("spotify_like.playlist_contains", return_value=False)
+    @mock.patch("spotify_like.playlist_info", return_value="Their Playlist")
+    @mock.patch("spotify_like.remember_playlist_addition")
+    @mock.patch(
+        "spotify_like.api_request",
+        side_effect=spotify_like.SpotifyError("Spotify API error 403.", status_code=403),
+    )
+    def test_reports_uneditable_source_playlist(
+        self, _request, remember, _info, _contains
+    ):
+        self.assertEqual(
+            spotify_like.add_to_source_playlist(
+                "spotify:track:current", "token", "list1"
+            ),
+            ("uneditable", "Their Playlist"),
+        )
+        remember.assert_not_called()
+
+    @mock.patch("spotify_like.notify")
+    @mock.patch("builtins.print")
+    @mock.patch(
+        "spotify_like.add_to_source_playlist",
+        return_value=("uneditable", "Their Playlist"),
+    )
+    @mock.patch("spotify_like.is_liked", return_value=False)
+    @mock.patch("spotify_like.access_token", return_value="token")
+    @mock.patch(
+        "spotify_like.current_track",
+        return_value=("spotify:track:current", "The Song", "The Artist", "list1"),
+    )
+    @mock.patch("spotify_like.api_request", return_value=(200, None))
+    def test_likes_track_when_source_playlist_is_uneditable(
+        self, _request, _track, _token, _liked, _add, _print, notify
+    ):
+        spotify_like.like_current()
+        self.assertEqual(
+            notify.call_args_list[-1],
+            mock.call("Liked “The Song”; you can’t edit “Their Playlist”"),
+        )
+
     @mock.patch("spotify_like.notify")
     @mock.patch("builtins.print")
     @mock.patch(

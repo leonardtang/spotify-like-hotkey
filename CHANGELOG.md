@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Report a successful like clearly when the source playlist cannot be edited.
+
 ## 1.0.0 — 2026-08-27
 
 - Toggle the current track in Spotify's Liked Songs with one global shortcut.

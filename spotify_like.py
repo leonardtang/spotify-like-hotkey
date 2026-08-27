@@ -41,7 +41,9 @@ SCOPE = " ".join(
 
 
 class SpotifyError(RuntimeError):
-    pass
+    def __init__(self, message, status_code=None):
+        super().__init__(message)
+        self.status_code = status_code
 
 
 def notify(message, title="Spotify Like"):
@@ -325,7 +327,10 @@ def api_request(url, token, method="GET", payload=None, retries=1):
             detail = json.loads(exc.read()).get("error", {}).get("message", "")
         except (json.JSONDecodeError, AttributeError):
             detail = ""
-        raise SpotifyError(f"Spotify API error {exc.code}" + (f": {detail}" if detail else ".")) from exc
+        raise SpotifyError(
+            f"Spotify API error {exc.code}" + (f": {detail}" if detail else "."),
+            status_code=exc.code,
+        ) from exc
 
 
 def playlist_info(playlist_id, token):
@@ -363,12 +368,17 @@ def add_to_source_playlist(track_uri, token, playlist_id):
     if playlist_contains(playlist_id, track_uri, token):
         return "already", name
     encoded_id = urllib.parse.quote(playlist_id, safe="")
-    status, _ = api_request(
-        f"https://api.spotify.com/v1/playlists/{encoded_id}/items",
-        token,
-        method="POST",
-        payload={"uris": [track_uri]},
-    )
+    try:
+        status, _ = api_request(
+            f"https://api.spotify.com/v1/playlists/{encoded_id}/items",
+            token,
+            method="POST",
+            payload={"uris": [track_uri]},
+        )
+    except SpotifyError as exc:
+        if exc.status_code == 403:
+            return "uneditable", name
+        raise
     if status != 201:
         raise SpotifyError(f"Spotify returned unexpected playlist status {status}.")
     remember_playlist_addition(track_uri, playlist_id, name)
@@ -447,8 +457,10 @@ def like_current():
     playlist_result = add_to_source_playlist(uri, token, playlist_id)
     if playlist_result and playlist_result[0] == "added":
         message = f"Liked “{name}” and added it to “{playlist_result[1]}”"
-    elif playlist_result:
+    elif playlist_result and playlist_result[0] == "already":
         message = f"Liked “{name}”; it’s already in “{playlist_result[1]}”"
+    elif playlist_result and playlist_result[0] == "uneditable":
+        message = f"Liked “{name}”; you can’t edit “{playlist_result[1]}”"
     else:
         message = f"Liked “{name}” — {artist}"
     notify(message)
