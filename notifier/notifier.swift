@@ -2,6 +2,7 @@ import Cocoa
 import UserNotifications
 
 final class NotificationDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
+    private let notificationLifetime: TimeInterval = 6
     private let notificationTitle = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "Spotify Like"
     private let notificationBody = CommandLine.arguments.count > 2 ? CommandLine.arguments[2] : "Ready"
 
@@ -38,13 +39,22 @@ final class NotificationDelegate: NSObject, NSApplicationDelegate, UNUserNotific
         let content = UNMutableNotificationContent()
         content.title = notificationTitle
         content.body = notificationBody
+        let identifier = UUID().uuidString
         let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
+            identifier: identifier,
             content: content,
             trigger: nil
         )
         center.add(request) { error in
-            self.finish(error?.localizedDescription)
+            if let error = error {
+                self.finish(error.localizedDescription)
+                return
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + self.notificationLifetime) {
+                center.removeDeliveredNotifications(withIdentifiers: [identifier])
+                center.removePendingNotificationRequests(withIdentifiers: [identifier])
+                NSApp.terminate(nil)
+            }
         }
     }
 
