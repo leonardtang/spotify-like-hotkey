@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Report a successful like clearly when the source playlist cannot be edited.
+- Detach shortcut work from Automator so completed runs do not linger at 99%.
 
 ## 1.0.0 — 2026-08-27
 

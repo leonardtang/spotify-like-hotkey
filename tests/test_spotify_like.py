@@ -1,11 +1,24 @@
 import json
+import plistlib
 import unittest
+from pathlib import Path
 from unittest import mock
 
 import spotify_like
 
 
 class SpotifyLikeTests(unittest.TestCase):
+    def test_workflow_detaches_spotify_task(self):
+        workflow = Path(__file__).parents[1] / (
+            "Toggle Current Spotify Song.workflow/Contents/Resources/document.wflow"
+        )
+        document = plistlib.loads(workflow.read_bytes())
+        command = document["actions"][0]["action"]["ActionParameters"][
+            "COMMAND_STRING"
+        ]
+        self.assertIn("/usr/bin/nohup", command)
+        self.assertTrue(command.endswith("&!"))
+
     @mock.patch("spotify_like.api_request")
     def test_current_track(self, request):
         request.return_value = (
